@@ -1,0 +1,17 @@
+textarea
+{
+  width:99%;
+  margin-left: 3px;
+  margin-top: 3px;
+}
+
+.notepad {
+  color: white;
+  font-size: 23px;
+  padding: 0.5px;
+  margin-left: 10px;
+}
+
+.home {
+  background-color: black;
+}
