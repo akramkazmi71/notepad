@@ -16,3 +16,18 @@ textarea {
 .home {
   background-color: black;
 }
+
+.download {
+  position:absolute;
+  top: 0.7%;
+  right: 0.7%;
+  background-color: black;
+  color: white;
+  border: 1px solid #ffffff;
+  border-radius: 5%;
+}
+
+.download:hover {
+  background-color: #ffffff; /* Green */
+  color: black;
+}
