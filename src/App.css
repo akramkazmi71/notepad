@@ -1,8 +1,9 @@
-textarea
-{
+textarea {
   width:99%;
+  height: 100%;
   margin-left: 3px;
   margin-top: 3px;
+  font-size: 15px;
 }
 
 .notepad {

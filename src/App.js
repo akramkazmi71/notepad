@@ -10,7 +10,7 @@ function App() {
   return (
     <div id="rulesformitem" class="formitem" className="home">
       <div className="notepad">Notepad</div>
-      <div class="textwrapper"><textarea cols="1" rows="42" /></div>
+      <div class="textwrapper"><textarea cols="5" rows="35" /></div>
     </div>
   );
 }
