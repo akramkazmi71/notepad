@@ -4,6 +4,8 @@ textarea {
   margin-left: 3px;
   margin-top: 3px;
   font-size: 15px;
+  color: white;
+  background-color: black;
 }
 
 .notepad {
