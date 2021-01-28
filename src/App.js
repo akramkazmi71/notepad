@@ -21,7 +21,7 @@ function App() {
       <div className="notepad">Textpad
       <button onClick={downloadTxtFile} className="download">Download</button>
       </div>
-      <div class="textwrapper"><textarea cols="5" rows="35" id="myInput" /></div>
+      <div class="textwrapper"><textarea cols="5" rows="37" id="myInput" /></div>
     </div>
   );
 }
