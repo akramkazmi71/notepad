@@ -6,7 +6,11 @@ function App() {
     const element = document.createElement("a");
     const file = new Blob([document.getElementById('myInput').value], {type: 'text/plain'});
     element.href = URL.createObjectURL(file);
-    element.download = "myFile.txt";
+    var docName = document.getElementById('name').value;
+    console.log('docName: ' + docName);
+    if(docName === "")
+      docName = "textpad";
+    element.download = docName;
     document.body.appendChild(element); // Required for this to work in FireFox
     element.click();
   }
@@ -26,7 +30,7 @@ function App() {
   return (
     <div id="rulesformitem" class="formitem" className="home">
       <div className="notepad">  
-      <input type="text" id="fname" name="fname" className="titleTag" placeholder="Textpad" />
+      <input type="text" id="name" name="fname" className="titleTag" placeholder="Textpad" />
       <button onClick={prettyPrint} className="format">Format JSON</button>
       <button onClick={downloadTxtFile} className="download">Download</button>
       </div>
