@@ -24,8 +24,18 @@ textarea {
 
 .download {
   position:absolute;
-  top: 0.7%;
+  top: 1.1%;
   right: 0.7%;
+  background-color: black;
+  color: silver;
+  border: 1px solid silver;
+  border-radius: 5%;
+}
+
+.format {
+  position:absolute;
+  top: 1.1%;
+  right: 6.9%;
   background-color: black;
   color: silver;
   border: 1px solid silver;
@@ -35,4 +45,15 @@ textarea {
 .download:hover {
   background-color: #ffffff; /* Green */
   color: black;
+}
+
+.format:hover {
+  background-color: #ffffff; /* Green */
+  color: black;
+}
+
+.titleTag {
+  font-size:20px;
+  color: white;
+  background-color: black;
 }

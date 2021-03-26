@@ -11,6 +11,13 @@ function App() {
     element.click();
   }
 
+  function prettyPrint() {
+    var ugly = document.getElementById('myInput').value;
+    var obj = JSON.parse(ugly);
+    var pretty = JSON.stringify(obj, undefined, 4);
+    document.getElementById('myInput').value = pretty;
+}
+
   window.addEventListener("beforeunload", (ev) => {
     ev.preventDefault();
     return ev.returnValue = 'Are you sure you want to close?';
@@ -18,10 +25,12 @@ function App() {
 
   return (
     <div id="rulesformitem" class="formitem" className="home">
-      <div className="notepad">Textpad
+      <div className="notepad">  
+      <input type="text" id="fname" name="fname" className="titleTag" placeholder="Textpad" />
+      <button onClick={prettyPrint} className="format">Format JSON</button>
       <button onClick={downloadTxtFile} className="download">Download</button>
       </div>
-      <div class="textwrapper"><textarea cols="5" rows="37" id="myInput" /></div>
+      <div class="textwrapper"><textarea cols="5" rows="35" id="myInput" /></div>
     </div>
   );
 }
