@@ -34,7 +34,7 @@ function App() {
       <button onClick={prettyPrint} className="format">Format JSON</button>
       <button onClick={downloadTxtFile} className="download">Download</button>
       </div>
-      <div class="textwrapper"><textarea cols="5" rows="37" id="myInput" /></div>
+      <div class="textwrapper"><textarea cols="5" rows="40" id="myInput" /></div>
     </div>
   );
 }
