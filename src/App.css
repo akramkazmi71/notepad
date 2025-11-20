@@ -116,14 +116,17 @@
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 1.5rem;
-  font-family: 'JetBrains Mono', monospace;
+  /* padding: 1.5rem;  -- Padding is handled by the Editor component prop */
+  font-family: 'Fira Code', 'Fira Mono', monospace;
+  /* Match App.js */
   font-size: 14px;
   line-height: 1.6;
-  resize: none;
+  /* resize: none; -- Not needed for div */
   outline: none;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  overflow: auto;
+  /* Allow scrolling */
 }
 
 .editor-textarea::placeholder {
@@ -133,6 +136,22 @@
 .editor-textarea:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+/* Keep selection visible even when editor doesn't have focus (for find/replace) */
+#code-editor-textarea::selection {
+  background-color: rgba(255, 200, 0, 0.4);
+  color: inherit;
+}
+
+#code-editor-textarea::-moz-selection {
+  background-color: rgba(255, 200, 0, 0.4);
+  color: inherit;
+}
+
+/* Show selection even when not focused */
+#code-editor-textarea {
+  caret-color: var(--text-primary);
 }
 
 /* Find and Replace Toolbar */
@@ -192,4 +211,23 @@
 .btn.active {
   background-color: var(--bg-tertiary);
   color: var(--accent-primary);
+}
+
+.detected-language {
+  margin-left: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-primary);
+}
+
+.match-counter {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
 }

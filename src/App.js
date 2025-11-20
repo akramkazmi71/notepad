@@ -1,12 +1,17 @@
 import './App.css';
 
 import { useState, useEffect, useRef } from 'react';
+
 import { jsonrepair } from 'jsonrepair';
+import Editor from 'react-simple-code-editor';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/vs2015.css'; // Dark theme by default
 import './App.css';
 
 function App() {
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState('textpad');
+  const [detectedLanguage, setDetectedLanguage] = useState('Plain Text');
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) return savedTheme;
@@ -16,7 +21,9 @@ function App() {
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
-  const textareaRef = useRef(null);
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const [totalMatches, setTotalMatches] = useState(0);
+  const findInputRef = useRef(null);
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
@@ -60,28 +67,52 @@ function App() {
   }
 
   function findNext() {
-    if (!findText) return;
-    const textarea = textareaRef.current;
-    const startPos = textarea.selectionEnd;
+    if (!findText) {
+      setCurrentMatch(0);
+      setTotalMatches(0);
+      return;
+    }
+    const textarea = document.getElementById('code-editor-textarea');
+    if (!textarea) return;
     const content = textarea.value;
 
-    let index = content.indexOf(findText, startPos);
-    if (index === -1) {
-      // Wrap around
-      index = content.indexOf(findText);
+    // Find all matches
+    const matches = [];
+    let pos = 0;
+    while ((pos = content.indexOf(findText, pos)) !== -1) {
+      matches.push(pos);
+      pos += findText.length;
     }
 
-    if (index !== -1) {
-      textarea.focus();
-      textarea.setSelectionRange(index, index + findText.length);
-    } else {
-      alert('Text not found');
+    setTotalMatches(matches.length);
+
+    if (matches.length === 0) {
+      setCurrentMatch(0);
+      return;
     }
+
+    // Find next match from current cursor position
+    const startPos = textarea.selectionEnd;
+    let nextMatchIndex = matches.findIndex(pos => pos >= startPos);
+
+    // Wrap around if we're past the last match
+    if (nextMatchIndex === -1) {
+      nextMatchIndex = 0;
+    }
+
+    const matchPos = matches[nextMatchIndex];
+    setCurrentMatch(nextMatchIndex + 1);
+
+    // Focus and highlight the match in the editor
+    textarea.focus();
+    textarea.setSelectionRange(matchPos, matchPos + findText.length);
   }
+
 
   function replace() {
     if (!findText) return;
-    const textarea = textareaRef.current;
+    const textarea = document.getElementById('code-editor-textarea');
+    if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = textarea.value.substring(start, end);
@@ -134,6 +165,7 @@ function App() {
           />
           <button onClick={prettyPrint} className="btn btn-primary">Format JSON</button>
           <button onClick={downloadTxtFile} className="btn btn-secondary">Download</button>
+          <span className="detected-language">{detectedLanguage}</span>
         </div>
       </header>
 
@@ -141,13 +173,29 @@ function App() {
         <div className="find-replace-toolbar">
           <div className="fr-group">
             <input
+              ref={findInputRef}
               type="text"
               placeholder="Find..."
               value={findText}
-              onChange={(e) => setFindText(e.target.value)}
+              onChange={(e) => {
+                setFindText(e.target.value);
+                setCurrentMatch(0);
+                setTotalMatches(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  findNext();
+                }
+              }}
               className="fr-input"
             />
-            <button onClick={findNext} className="btn btn-secondary btn-sm">Find Next</button>
+            {totalMatches > 0 && (
+              <span className="match-counter">
+                {currentMatch}/{totalMatches}
+              </span>
+            )}
+            <button onClick={findNext} className="btn btn-secondary btn-sm">Next</button>
           </div>
           <div className="fr-group">
             <input
@@ -164,16 +212,38 @@ function App() {
       )}
 
       <main className="editor-container">
-        <textarea
-          ref={textareaRef}
+        <Editor
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onValueChange={code => setText(code)}
+          onKeyDown={(e) => {
+            // F3 or Ctrl+G to find next
+            if ((e.key === 'F3' || (e.ctrlKey && e.key === 'g')) && findText) {
+              e.preventDefault();
+              findNext();
+            }
+          }}
+          highlight={code => {
+
+            if (!code) {
+              setDetectedLanguage('Plain Text');
+              return '';
+            }
+            const result = hljs.highlightAuto(code);
+            setDetectedLanguage(result.language ? result.language : 'Plain Text');
+            return result.value;
+          }}
+          padding={10}
+          textareaId="code-editor-textarea"
           className="editor-textarea"
-          placeholder="Type or paste your text/JSON here..."
-          spellCheck="false"
+          style={{
+            fontFamily: '"Fira code", "Fira Mono", monospace',
+            fontSize: 14,
+            minHeight: '100%',
+          }}
+          textareaClassName="editor-textarea-internal"
         />
       </main>
-    </div>
+    </div >
   );
 }
 
