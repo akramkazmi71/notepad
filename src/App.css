@@ -108,51 +108,55 @@
   overflow: hidden;
 }
 
+.editor-wrapper {
+  flex: 1;
+  display: flex;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.line-numbers {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 1.75rem 0.75rem 1.5rem 0.25rem;
+  /* top right bottom left */
+  font-family: 'Fira Code', 'Fira Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: right;
+  user-select: none;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  border-right: 1px solid var(--border-color);
+  white-space: pre;
+  flex-shrink: 0;
+  height: 100%;
+  align-self: stretch;
+}
+
 .editor-textarea {
   flex: 1;
   width: 100%;
   height: 100%;
   background-color: var(--bg-secondary);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  /* padding: 1.5rem;  -- Padding is handled by the Editor component prop */
+  border: none;
+  border-radius: 0;
+  padding: 1.5rem;
+  padding-top: 1.75rem;
+  /* Match line numbers padding */
   font-family: 'Fira Code', 'Fira Mono', monospace;
-  /* Match App.js */
   font-size: 14px;
   line-height: 1.6;
-  /* resize: none; -- Not needed for div */
+  resize: none;
   outline: none;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  overflow: auto;
-  /* Allow scrolling */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.editor-textarea::placeholder {
-  color: var(--text-secondary);
-}
 
-.editor-textarea:focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-primary);
-}
-
-/* Keep selection visible even when editor doesn't have focus (for find/replace) */
-#code-editor-textarea::selection {
-  background-color: rgba(255, 200, 0, 0.4);
-  color: inherit;
-}
-
-#code-editor-textarea::-moz-selection {
-  background-color: rgba(255, 200, 0, 0.4);
-  color: inherit;
-}
-
-/* Show selection even when not focused */
-#code-editor-textarea {
-  caret-color: var(--text-primary);
-}
 
 /* Find and Replace Toolbar */
 .find-replace-toolbar {
