@@ -3,6 +3,8 @@ import './App.css';
 import { useState, useEffect, useRef } from 'react';
 
 import { jsonrepair } from 'jsonrepair';
+import CodeMirror from '@uiw/react-codemirror';
+import { oneDark } from '@codemirror/theme-one-dark';
 import './App.css';
 
 function App() {
@@ -21,22 +23,6 @@ function App() {
   const [totalMatches, setTotalMatches] = useState(0);
   const findInputRef = useRef(null);
   const textareaRef = useRef(null);
-  const [lineNumbers, setLineNumbers] = useState('1');
-  const [lineNumberWidth, setLineNumberWidth] = useState(3.5);
-
-  // Update line numbers when text changes
-  useEffect(() => {
-    const lines = text.split('\n');
-    const numbers = lines.map((_, i) => i + 1).join('\n');
-    setLineNumbers(numbers);
-
-    // Calculate width based on number of digits
-    const lineCount = lines.length;
-    const digits = lineCount.toString().length;
-    // Base width + extra per digit (in rem)
-    const width = 2 + (digits * 0.6);
-    setLineNumberWidth(width);
-  }, [text]);
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
@@ -88,10 +74,9 @@ function App() {
     const textarea = textareaRef.current;
     if (!textarea) return;
     const content = textarea.value;
-    const searchText = findText.toLowerCase(); // Case-insensitive search
+    const searchText = findText.toLowerCase();
     const lowerContent = content.toLowerCase();
 
-    // Find all matches (case-insensitive)
     const matches = [];
     let pos = 0;
     while ((pos = lowerContent.indexOf(searchText, pos)) !== -1) {
@@ -106,11 +91,9 @@ function App() {
       return;
     }
 
-    // Find next match from current cursor position
     const startPos = textarea.selectionEnd;
     let nextMatchIndex = matches.findIndex(pos => pos >= startPos);
 
-    // Wrap around if we're past the last match
     if (nextMatchIndex === -1) {
       nextMatchIndex = 0;
     }
@@ -118,17 +101,8 @@ function App() {
     const matchPos = matches[nextMatchIndex];
     setCurrentMatch(nextMatchIndex + 1);
 
-    // Focus and highlight the match
     textarea.focus();
     textarea.setSelectionRange(matchPos, matchPos + findText.length);
-
-    // Scroll to make the match visible
-    // Calculate the line number of the match
-    const textBeforeMatch = content.substring(0, matchPos);
-    const lineNumber = textBeforeMatch.split('\n').length;
-    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-    const scrollTop = Math.max(0, (lineNumber - 3) * lineHeight); // Show a few lines above
-    textarea.scrollTop = scrollTop;
   }
 
 
@@ -140,10 +114,9 @@ function App() {
     const end = textarea.selectionEnd;
     const selectedText = textarea.value.substring(start, end);
 
-    if (selectedText === findText) {
+    if (selectedText.toLowerCase() === findText.toLowerCase()) {
       const newText = text.substring(0, start) + replaceText + text.substring(end);
       setText(newText);
-      // Restore selection/cursor after React update
       setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(start, start + replaceText.length);
@@ -235,36 +208,33 @@ function App() {
       )}
 
       <main className="editor-container">
-        <div className="editor-wrapper">
-          <div
-            className="line-numbers"
-            style={{ minWidth: `${lineNumberWidth}rem` }}
-          >
-            {lineNumbers}
-          </div>
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              // F3 or Ctrl+G to find next
-              if ((e.key === 'F3' || (e.ctrlKey && e.key === 'g')) && findText) {
-                e.preventDefault();
-                findNext();
-              }
-            }}
-            onScroll={(e) => {
-              // Sync line numbers scroll with textarea scroll
-              const lineNumbersDiv = e.target.previousElementSibling;
-              if (lineNumbersDiv) {
-                lineNumbersDiv.scrollTop = e.target.scrollTop;
-              }
-            }}
-            className="editor-textarea"
-            placeholder="Type or paste your text/code here..."
-            spellCheck="false"
-          />
-        </div>
+        <CodeMirror
+          value={text}
+          height="100%"
+          theme={theme === 'dark' ? oneDark : 'light'}
+          onChange={(value) => setText(value)}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: true,
+            highlightActiveLine: true,
+            foldGutter: true,
+            dropCursor: true,
+            allowMultipleSelections: true,
+            indentOnInput: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: true,
+            rectangularSelection: true,
+            crosshairCursor: true,
+            highlightSelectionMatches: true,
+            closeBracketsKeymap: true,
+            searchKeymap: true,
+            foldKeymap: true,
+            completionKeymap: true,
+            lintKeymap: true,
+          }}
+          className="codemirror-wrapper"
+        />
       </main>
     </div >
   );
