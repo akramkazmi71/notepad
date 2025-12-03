@@ -9,7 +9,6 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { markdown } from '@codemirror/lang-markdown';
 import { go } from '@codemirror/lang-go';
-import { SearchQuery } from '@codemirror/search';
 import './App.css';
 
 function App() {
