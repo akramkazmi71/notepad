@@ -1,8 +1,14 @@
-import './App.css';
-
 import { useState, useEffect, useRef } from 'react';
-
 import { jsonrepair } from 'jsonrepair';
+import CodeMirror from '@uiw/react-codemirror';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
+import { json } from '@codemirror/lang-json';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { markdown } from '@codemirror/lang-markdown';
+import { go } from '@codemirror/lang-go';
 import './App.css';
 
 function App() {
@@ -19,29 +25,105 @@ function App() {
   const [replaceText, setReplaceText] = useState('');
   const [currentMatch, setCurrentMatch] = useState(0);
   const [totalMatches, setTotalMatches] = useState(0);
+  const [detectedLanguage, setDetectedLanguage] = useState('Plain Text');
   const findInputRef = useRef(null);
-  const textareaRef = useRef(null);
-  const [lineNumbers, setLineNumbers] = useState('1');
-  const [lineNumberWidth, setLineNumberWidth] = useState(3.5);
-
-  // Update line numbers when text changes
-  useEffect(() => {
-    const lines = text.split('\n');
-    const numbers = lines.map((_, i) => i + 1).join('\n');
-    setLineNumbers(numbers);
-
-    // Calculate width based on number of digits
-    const lineCount = lines.length;
-    const digits = lineCount.toString().length;
-    // Base width + extra per digit (in rem)
-    const width = 2 + (digits * 0.6);
-    setLineNumberWidth(width);
-  }, [text]);
+  const editorViewRef = useRef(null);
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Detect language from content
+  useEffect(() => {
+    const detected = detectLanguage(text);
+    setDetectedLanguage(detected);
+  }, [text]);
+
+  function detectLanguage(content) {
+    if (!content.trim()) return 'Plain Text';
+
+    // JSON detection
+    if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+      try {
+        JSON.parse(content);
+        return 'JSON';
+      } catch (e) {
+        // Continue to other checks
+      }
+    }
+
+    // TypeScript detection (check before JavaScript)
+    if (/\b(interface|type)\s+\w+/.test(content) ||
+      /:\s*(string|number|boolean|any)/.test(content) ||
+      /implements\s+\w+/.test(content)) {
+      return 'TypeScript';
+    }
+
+    // Go detection
+    if (/package\s+\w+/.test(content) ||
+      /func\s+\w+/.test(content) ||
+      /fmt\./.test(content) ||
+      /go\s+func/.test(content)) {
+      return 'Go';
+    }
+
+    // Python detection (improved with multiline flag)
+    if (/^\s*def\s+\w+/m.test(content) ||
+      /^\s*class\s+\w+/m.test(content) ||
+      /^\s*import\s+\w+/m.test(content) ||
+      /^\s*from\s+\w+\s+import/m.test(content) ||
+      /^\s*print\s*\(/m.test(content)) {
+      return 'Python';
+    }
+
+    // HTML detection
+    if (/<(!DOCTYPE|html|head|body|div|span|p|a|img)/.test(content)) {
+      return 'HTML';
+    }
+
+    // CSS detection
+    if (/[.#]?\w+\s*\{[^}]*\}/.test(content) && /[a-z-]+:\s*[^;]+;/.test(content)) {
+      return 'CSS';
+    }
+
+    // Markdown detection
+    if (/^#{1,6}\s/m.test(content) ||
+      /\[.*\]\(.*\)/.test(content) ||
+      /^[-*]\s/m.test(content)) {
+      return 'Markdown';
+    }
+
+    // JavaScript detection
+    if (/\b(function|const|let|var|=>|import|export|require)\b/.test(content)) {
+      return 'JavaScript';
+    }
+
+    return 'Plain Text';
+  }
+
+  function getLanguageExtension() {
+    switch (detectedLanguage) {
+      case 'JSON':
+        return json();
+      case 'JavaScript':
+        return javascript();
+      case 'TypeScript':
+        return javascript({ typescript: true });
+      case 'Python':
+        return python();
+      case 'HTML':
+        return html();
+      case 'CSS':
+        return css();
+      case 'Markdown':
+        return markdown();
+      case 'Go':
+        return go();
+      default:
+        return [];
+    }
+  }
 
   function toggleTheme() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -80,18 +162,18 @@ function App() {
   }
 
   function findNext() {
-    if (!findText) {
+    if (!findText || !editorViewRef.current) {
       setCurrentMatch(0);
       setTotalMatches(0);
       return;
     }
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const content = textarea.value;
-    const searchText = findText.toLowerCase(); // Case-insensitive search
+
+    const view = editorViewRef.current;
+    const content = text;
+    const searchText = findText.toLowerCase();
     const lowerContent = content.toLowerCase();
 
-    // Find all matches (case-insensitive)
+    // Find all matches
     const matches = [];
     let pos = 0;
     while ((pos = lowerContent.indexOf(searchText, pos)) !== -1) {
@@ -106,11 +188,11 @@ function App() {
       return;
     }
 
-    // Find next match from current cursor position
-    const startPos = textarea.selectionEnd;
-    let nextMatchIndex = matches.findIndex(pos => pos >= startPos);
+    // Get current cursor position
+    const currentPos = view.state.selection.main.head;
+    let nextMatchIndex = matches.findIndex(pos => pos >= currentPos);
 
-    // Wrap around if we're past the last match
+    // Wrap around if needed
     if (nextMatchIndex === -1) {
       nextMatchIndex = 0;
     }
@@ -118,36 +200,27 @@ function App() {
     const matchPos = matches[nextMatchIndex];
     setCurrentMatch(nextMatchIndex + 1);
 
-    // Focus and highlight the match
-    textarea.focus();
-    textarea.setSelectionRange(matchPos, matchPos + findText.length);
-
-    // Scroll to make the match visible
-    // Calculate the line number of the match
-    const textBeforeMatch = content.substring(0, matchPos);
-    const lineNumber = textBeforeMatch.split('\n').length;
-    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-    const scrollTop = Math.max(0, (lineNumber - 3) * lineHeight); // Show a few lines above
-    textarea.scrollTop = scrollTop;
+    // Set selection in CodeMirror
+    view.dispatch({
+      selection: { anchor: matchPos, head: matchPos + findText.length },
+      scrollIntoView: true
+    });
+    view.focus();
   }
 
 
   function replace() {
-    if (!findText) return;
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
+    if (!findText || !editorViewRef.current) return;
 
-    if (selectedText === findText) {
-      const newText = text.substring(0, start) + replaceText + text.substring(end);
-      setText(newText);
-      // Restore selection/cursor after React update
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start, start + replaceText.length);
-      }, 0);
+    const view = editorViewRef.current;
+    const selection = view.state.selection.main;
+    const selectedText = view.state.doc.sliceString(selection.from, selection.to);
+
+    if (selectedText.toLowerCase() === findText.toLowerCase()) {
+      view.dispatch({
+        changes: { from: selection.from, to: selection.to, insert: replaceText },
+        selection: { anchor: selection.from, head: selection.from + replaceText.length }
+      });
     } else {
       findNext();
     }
@@ -166,6 +239,9 @@ function App() {
       <header className="app-header">
         <div className="logo">Notepad</div>
         <div className="controls">
+          {detectedLanguage !== 'Plain Text' && (
+            <span className="detected-language">{detectedLanguage}</span>
+          )}
           <button
             onClick={() => setShowFindReplace(!showFindReplace)}
             className={`btn btn-icon ${showFindReplace ? 'active' : ''}`}
@@ -208,6 +284,7 @@ function App() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
+                  e.stopPropagation();
                   findNext();
                 }
               }}
@@ -235,36 +312,37 @@ function App() {
       )}
 
       <main className="editor-container">
-        <div className="editor-wrapper">
-          <div
-            className="line-numbers"
-            style={{ minWidth: `${lineNumberWidth}rem` }}
-          >
-            {lineNumbers}
-          </div>
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              // F3 or Ctrl+G to find next
-              if ((e.key === 'F3' || (e.ctrlKey && e.key === 'g')) && findText) {
-                e.preventDefault();
-                findNext();
-              }
-            }}
-            onScroll={(e) => {
-              // Sync line numbers scroll with textarea scroll
-              const lineNumbersDiv = e.target.previousElementSibling;
-              if (lineNumbersDiv) {
-                lineNumbersDiv.scrollTop = e.target.scrollTop;
-              }
-            }}
-            className="editor-textarea"
-            placeholder="Type or paste your text/code here..."
-            spellCheck="false"
-          />
-        </div>
+        <CodeMirror
+          value={text}
+          height="100%"
+          theme={theme === 'dark' ? oneDark : 'light'}
+          onChange={(value) => setText(value)}
+          extensions={[getLanguageExtension()]}
+          onCreateEditor={(view) => {
+            editorViewRef.current = view;
+          }}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: true,
+            highlightActiveLine: true,
+            foldGutter: true,
+            dropCursor: true,
+            allowMultipleSelections: true,
+            indentOnInput: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: true,
+            rectangularSelection: true,
+            crosshairCursor: true,
+            highlightSelectionMatches: true,
+            closeBracketsKeymap: true,
+            searchKeymap: true,
+            foldKeymap: true,
+            completionKeymap: true,
+            lintKeymap: true,
+          }}
+          className="codemirror-wrapper"
+        />
       </main>
     </div >
   );
